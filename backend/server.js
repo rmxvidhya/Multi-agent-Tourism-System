@@ -235,6 +235,7 @@ User request: ${input}`
       );
 
       const assistantContent = response.data.content;
+      console.log(`📥 Assistant response:`, JSON.stringify(assistantContent, null, 2));
       
       // Add assistant message to conversation
       messages.push({
@@ -242,11 +243,11 @@ User request: ${input}`
         content: assistantContent
       });
 
-      // Check if there's a tool use
-      const toolUse = assistantContent.find(block => block.type === 'tool_use');
+      // Find ALL tool uses in this response
+      const toolUses = assistantContent.filter(block => block.type === 'tool_use');
       
-      if (!toolUse) {
-        // No more tools to use, return the final response
+      if (toolUses.length === 0) {
+        // No tools to use, return the final response
         const textContent = assistantContent
           .filter(block => block.type === 'text')
           .map(block => block.text)
@@ -256,44 +257,53 @@ User request: ${input}`
         return res.json({ response: textContent });
       }
 
-      console.log(`🔧 Tool called: ${toolUse.name}`);
+      console.log(`🔧 Found ${toolUses.length} tool(s) to execute`);
 
-      // Execute the tool
-      let toolResult;
-      try {
-        if (toolUse.name === 'get_coordinates') {
-          toolResult = await getCoordinates(toolUse.input.place_name);
-        } else if (toolUse.name === 'get_weather') {
-          toolResult = await getWeather(
-            toolUse.input.latitude,
-            toolUse.input.longitude,
-            toolUse.input.place_name
-          );
-        } else if (toolUse.name === 'get_tourist_places') {
-          toolResult = await getTouristPlaces(
-            toolUse.input.latitude,
-            toolUse.input.longitude,
-            toolUse.input.place_name
-          );
-        } else {
-          toolResult = { error: 'Unknown tool' };
+      // Execute ALL tools and collect results
+      const toolResults = [];
+      
+      for (const toolUse of toolUses) {
+        console.log(`🔧 Executing tool: ${toolUse.name}`);
+        
+        let toolResult;
+        try {
+          if (toolUse.name === 'get_coordinates') {
+            toolResult = await getCoordinates(toolUse.input.place_name);
+          } else if (toolUse.name === 'get_weather') {
+            toolResult = await getWeather(
+              toolUse.input.latitude,
+              toolUse.input.longitude,
+              toolUse.input.place_name
+            );
+          } else if (toolUse.name === 'get_tourist_places') {
+            toolResult = await getTouristPlaces(
+              toolUse.input.latitude,
+              toolUse.input.longitude,
+              toolUse.input.place_name
+            );
+          } else {
+            toolResult = { error: 'Unknown tool' };
+          }
+        } catch (error) {
+          console.error(`❌ Tool execution error:`, error.message);
+          toolResult = { error: error.message };
         }
-      } catch (error) {
-        console.error(`❌ Tool execution error:`, error.message);
-        toolResult = { error: error.message };
+
+        // Add this tool result to the collection
+        toolResults.push({
+          type: 'tool_result',
+          tool_use_id: toolUse.id,
+          content: JSON.stringify(toolResult)
+        });
       }
 
-      // Add tool result to conversation - CRITICAL: This must be the next message
+      // Add ALL tool results in a single user message
       messages.push({
         role: 'user',
-        content: [
-          {
-            type: 'tool_result',
-            tool_use_id: toolUse.id,
-            content: JSON.stringify(toolResult)
-          }
-        ]
+        content: toolResults
       });
+
+      console.log(`📤 Sent ${toolResults.length} tool result(s) back to Claude`);
 
       iterations++;
     }
@@ -303,6 +313,12 @@ User request: ${input}`
 
   } catch (error) {
     console.error('❌ Error:', error.response?.data || error.message);
+    
+    // Log full error details for debugging
+    if (error.response?.data) {
+      console.error('Full error details:', JSON.stringify(error.response.data, null, 2));
+    }
+    
     res.status(500).json({ 
       error: error.response?.data?.error?.message || error.message 
     });
