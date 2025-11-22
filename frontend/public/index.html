@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tourism Planning Assistant | AI-Powered Travel Planner</title>
+    <meta name="description" content="Plan your perfect trip with AI. Get weather forecasts and discover top tourist attractions for any city worldwide.">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 18px 24px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="text"]::placeholder {
+            color: #999;
+        }
+
+        button {
+            padding: 18px 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            border: 2px solid #fcc;
+            color: #c33;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: start;
+            gap: 15px;
+        }
+
+        .error-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .result {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 16px;
+            padding: 30px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .result-icon {
+            font-size: 32px;
+        }
+
+        .result-title {
+            font-size: 1.8em;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .result-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            line-height: 1.8;
+            color: #444;
+            white-space: pre-wrap;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .examples {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .examples h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .example-item {
+            background: #f8f9ff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .example-item:hover {
+            background: #eef1ff;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .example-item::before {
+            content: "💬 ";
+            margin-right: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.9;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            border-bottom: 1px solid white;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-left: 10px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .example-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="header-icon">🌍</div>
+                <h1>Tourism Planning Assistant <span class="badge">AI-Powered</span></h1>
+                <p class="subtitle">Discover weather and attractions for any destination worldwide</p>
+            </div>
+
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="E.g., I'm going to Paris, let's plan my trip..."
+                    autocomplete="off"
+                />
+                <button id="submitBtn" onclick="planTrip()">
+                    🚀 Plan Trip
+                </button>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p style="font-size: 1.2em; font-weight: 600;">Planning your perfect trip...</p>
+                <p style="margin-top: 10px; color: #999;">Gathering weather data and tourist attractions</p>
+            </div>
+
+            <div id="error" class="error hidden">
+                <div class="error-icon">⚠️</div>
+                <div>
+                    <strong>Oops! Something went wrong</strong>
+                    <p id="errorMessage"></p>
+                </div>
+            </div>
+
+            <div id="result" class="result hidden">
+                <div class="result-header">
+                    <span class="result-icon">✈️</span>
+                    <h2 class="result-title">Your Trip Plan</h2>
+                </div>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+
+            <div class="examples">
+                <h2>💡 Try These Examples</h2>
+                <div class="example-grid">
+                    <div class="example-item" onclick="fillExample(this)">
+                        I'm going to Bangalore, let's plan my trip
+                    </div>
+                    <div class="example-item" onclick="fillExample(this)">
+                        What's the weather in Tokyo?
+                    </div>
+                    <div class="example-item" onclick="fillExample(this)">
+                        Tell me about Paris tourist spots
+                    </div>
+                    <div class="example-item" onclick="fillExample(this)">
+                        London weather and places to visit
+                    </div>
+                    <div class="example-item" onclick="fillExample(this)">
+                        I want to explore New York City
+                    </div>
+                    <div class="example-item" onclick="fillExample(this)">
+                        Planning a trip to Barcelona
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by Claude AI • Built with ❤️ for travelers</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                Using Open-Meteo, OpenStreetMap & Nominatim APIs
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // IMPORTANT: Change this to your deployed backend URL on Render
+        const BACKEND_URL = 'http://localhost:3000';
+        // Example: const BACKEND_URL = 'https://tourism-agent-backend-xxxx.onrender.com';
+
+        const userInput = document.getElementById('userInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+        const result = document.getElementById('result');
+        const resultContent = document.getElementById('resultContent');
+
+        // Allow Enter key to submit
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !submitBtn.disabled) {
+                planTrip();
+            }
+        });
+
+        async function planTrip() {
+            const input = userInput.value.trim();
+            
+            if (!input) {
+                showError('Please enter a destination or question!');
+                return;
+            }
+
+            // Hide previous results and errors
+            error.classList.add('hidden');
+            result.classList.add('hidden');
+            
+            // Show loading
+            loading.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Planning...';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/plan-trip`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ input })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to plan trip');
+                }
+
+                // Show result
+                resultContent.textContent = data.response;
+                result.classList.remove('hidden');
+                
+                // Scroll to result
+                result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (err) {
+                showError(err.message || 'An unexpected error occurred. Please try again.');
+            } finally {
+                // Hide loading
+                loading.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Plan Trip';
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            error.classList.remove('hidden');
+            error.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function fillExample(element) {
+            userInput.value = element.textContent.trim();
+            userInput.focus();
+            
+            // Optional: Auto-submit
+            // planTrip();
+        }
+
+        // Check backend connection on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                if (response.ok) {
+                    console.log('✅ Backend connection successful');
+                } else {
+                    console.warn('⚠️ Backend health check failed');
+                }
+            } catch (err) {
+                console.error('❌ Cannot connect to backend:', err.message);
+                showError('Cannot connect to backend server. Please check if the backend is running.');
+            }
+        });
+    </script>
+</body>
+</html>
