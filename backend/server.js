@@ -40,7 +40,7 @@ async function getCoordinates(placeName) {
     return result;
   } catch (error) {
     console.error('❌ Error getting coordinates:', error.message);
-    return { error: error.message };
+    return { found: false, error: error.message };
   }
 }
 
@@ -73,7 +73,7 @@ async function getWeather(latitude, longitude, placeName) {
 async function getTouristPlaces(latitude, longitude, placeName) {
   try {
     console.log(`🏛️  Getting tourist places for: ${placeName}`);
-    const radius = 10000; // 10km radius
+    const radius = 10000;
     const query = `
       [out:json][timeout:25];
       (
@@ -90,7 +90,8 @@ async function getTouristPlaces(latitude, longitude, placeName) {
     const response = await axios.post('https://overpass-api.de/api/interpreter', query, {
       headers: {
         'Content-Type': 'text/plain'
-      }
+      },
+      timeout: 30000
     });
     
     const places = response.data.elements
@@ -109,7 +110,7 @@ async function getTouristPlaces(latitude, longitude, placeName) {
     return result;
   } catch (error) {
     console.error('❌ Error getting tourist places:', error.message);
-    return { error: error.message };
+    return { error: error.message, attractions: [] };
   }
 }
 
@@ -129,26 +130,6 @@ app.post('/api/plan-trip', async (req, res) => {
     if (!ANTHROPIC_API_KEY) {
       return res.status(500).json({ error: 'API key not configured' });
     }
-
-    // Initial request to Claude
-    let conversationHistory = [
-      {
-        role: 'user',
-        content: `You are a Tourism AI Agent that helps users plan their trips. Your job is to:
-
-1. Understand what information the user wants (weather, places to visit, or both)
-2. Use the available tools to get real-time information
-3. Present the information in a friendly, helpful manner
-
-Process:
-- First, use get_coordinates to find the location
-- If coordinates are not found, politely inform the user that you don't know if this place exists
-- Based on the user's request, call get_weather and/or get_tourist_places
-- Format the response naturally with proper formatting (use bullets for lists)
-
-User request: ${input}`
-      }
-    ];
 
     const tools = [
       {
@@ -211,6 +192,25 @@ User request: ${input}`
       }
     ];
 
+    let messages = [
+      {
+        role: 'user',
+        content: `You are a Tourism AI Agent that helps users plan their trips. Your job is to:
+
+1. Understand what information the user wants (weather, places to visit, or both)
+2. Use the available tools to get real-time information
+3. Present the information in a friendly, helpful manner
+
+Process:
+- First, use get_coordinates to find the location
+- If coordinates are not found, politely inform the user that you don't know if this place exists
+- Based on the user's request, call get_weather and/or get_tourist_places
+- Format the response naturally with proper formatting (use bullets for lists)
+
+User request: ${input}`
+      }
+    ];
+
     let iterations = 0;
     const maxIterations = 10;
 
@@ -223,7 +223,7 @@ User request: ${input}`
           model: 'claude-sonnet-4-20250514',
           max_tokens: 4000,
           tools,
-          messages: conversationHistory
+          messages
         },
         {
           headers: {
@@ -234,18 +234,20 @@ User request: ${input}`
         }
       );
 
-      const assistantMessage = response.data.content;
-      conversationHistory.push({
+      const assistantContent = response.data.content;
+      
+      // Add assistant message to conversation
+      messages.push({
         role: 'assistant',
-        content: assistantMessage
+        content: assistantContent
       });
 
       // Check if there's a tool use
-      const toolUse = assistantMessage.find(block => block.type === 'tool_use');
+      const toolUse = assistantContent.find(block => block.type === 'tool_use');
       
       if (!toolUse) {
         // No more tools to use, return the final response
-        const textContent = assistantMessage
+        const textContent = assistantContent
           .filter(block => block.type === 'text')
           .map(block => block.text)
           .join('\n');
@@ -258,24 +260,31 @@ User request: ${input}`
 
       // Execute the tool
       let toolResult;
-      if (toolUse.name === 'get_coordinates') {
-        toolResult = await getCoordinates(toolUse.input.place_name);
-      } else if (toolUse.name === 'get_weather') {
-        toolResult = await getWeather(
-          toolUse.input.latitude,
-          toolUse.input.longitude,
-          toolUse.input.place_name
-        );
-      } else if (toolUse.name === 'get_tourist_places') {
-        toolResult = await getTouristPlaces(
-          toolUse.input.latitude,
-          toolUse.input.longitude,
-          toolUse.input.place_name
-        );
+      try {
+        if (toolUse.name === 'get_coordinates') {
+          toolResult = await getCoordinates(toolUse.input.place_name);
+        } else if (toolUse.name === 'get_weather') {
+          toolResult = await getWeather(
+            toolUse.input.latitude,
+            toolUse.input.longitude,
+            toolUse.input.place_name
+          );
+        } else if (toolUse.name === 'get_tourist_places') {
+          toolResult = await getTouristPlaces(
+            toolUse.input.latitude,
+            toolUse.input.longitude,
+            toolUse.input.place_name
+          );
+        } else {
+          toolResult = { error: 'Unknown tool' };
+        }
+      } catch (error) {
+        console.error(`❌ Tool execution error:`, error.message);
+        toolResult = { error: error.message };
       }
 
-      // Add tool result to conversation
-      conversationHistory.push({
+      // Add tool result to conversation - CRITICAL: This must be the next message
+      messages.push({
         role: 'user',
         content: [
           {
