@@ -236,7 +236,7 @@
             padding: 4px 8px;
             background: #eef1ff;
             color: #2b3aeb;
-            border: 1px solid #2b3aeb; /* dark blue border */
+            border: 1px solid #2b3aeb;
             border-radius: 8px;
             font-weight: 700;
             margin-right: 10px;
@@ -348,9 +348,6 @@
                         What's the weather in Tokyo?
                     </div>
                     <div class="example-item" onclick="fillExample(this)">
-                        Tell me about Paris tourist spots
-                    </div>
-                    <div class="example-item" onclick="fillExample(this)">
                         London weather and places to visit
                     </div>
                 </div>
@@ -369,7 +366,6 @@
         const result = document.getElementById('result');
         const resultContent = document.getElementById('resultContent');
 
-        // Allow Enter key to submit
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !submitBtn.disabled) {
                 planTrip();
@@ -384,11 +380,9 @@
                 return;
             }
 
-            // Hide previous results and errors
             error.classList.add('hidden');
             result.classList.add('hidden');
             
-            // Show loading
             loading.classList.remove('hidden');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Planning...';
@@ -408,11 +402,9 @@
                     throw new Error(data.error || 'Failed to plan trip');
                 }
 
-                // Show result
                 resultContent.textContent = data.response;
                 result.classList.remove('hidden');
                 
-                // Scroll to result
                 result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             } catch (err) {

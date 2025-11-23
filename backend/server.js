@@ -259,7 +259,7 @@ User request: ${input}`
     const maxIterations = 10;
 
     while (iterations < maxIterations) {
-      console.log(`\n🔄 Iteration ${iterations + 1}`);
+      console.log(`\nIteration ${iterations + 1}`);
       
       const response = await axios.post(
         'https://api.anthropic.com/v1/messages',
@@ -279,7 +279,7 @@ User request: ${input}`
       );
 
       const assistantContent = response.data.content;
-      console.log(`📥 Assistant response:`, JSON.stringify(assistantContent, null, 2));
+      console.log(`Assistant response:`, JSON.stringify(assistantContent, null, 2));
       
       messages.push({
         role: 'assistant',
