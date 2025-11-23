@@ -1,7 +1,7 @@
 {
   "name": "tourism-agent-backend",
   "version": "1.0.0",
-  "description": "Multi-agent tourism planning system backend",
+  "description": "Multi-agent tourism system backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

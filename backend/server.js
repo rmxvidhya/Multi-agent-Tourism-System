@@ -6,14 +6,12 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Tool implementations
 async function getCoordinates(placeName) {
   try {
-    console.log(`🔍 Getting coordinates for: ${placeName}`);
+    console.log(`Getting coordinates for: ${placeName}`);
     const response = await axios.get('https://nominatim.openstreetmap.org/search', {
       params: {
         q: placeName,
@@ -26,7 +24,7 @@ async function getCoordinates(placeName) {
     });
     
     if (response.data.length === 0) {
-      console.log(`❌ Place not found: ${placeName}`);
+      console.log(`Place not found: ${placeName}`);
       return { found: false, message: "Place not found" };
     }
     
@@ -36,17 +34,17 @@ async function getCoordinates(placeName) {
       longitude: parseFloat(response.data[0].lon),
       display_name: response.data[0].display_name
     };
-    console.log(`✅ Coordinates found:`, result);
+    console.log(`Coordinates found:`, result);
     return result;
   } catch (error) {
-    console.error('❌ Error getting coordinates:', error.message);
+    console.error('Error retrieving coordinates:', error.message);
     return { found: false, error: error.message };
   }
 }
 
 async function getWeather(latitude, longitude, placeName) {
   try {
-    console.log(`🌤️  Getting weather for: ${placeName}`);
+    console.log(`Getting weather data for: ${placeName}`);
     const response = await axios.get('https://api.open-meteo.com/v1/forecast', {
       params: {
         latitude,
@@ -62,17 +60,17 @@ async function getWeather(latitude, longitude, placeName) {
       precipitation_probability: response.data.current.precipitation_probability || 0,
       unit: response.data.current_units.temperature_2m
     };
-    console.log(`✅ Weather data:`, result);
+    console.log(`Weather data:`, result);
     return result;
   } catch (error) {
-    console.error('❌ Error getting weather:', error.message);
+    console.error('Error getting weather data:', error.message);
     return { error: error.message };
   }
 }
 
 async function getTouristPlaces(latitude, longitude, placeName) {
   try {
-    console.log(`🏛️  Getting tourist places for: ${placeName}`);
+    console.log(`Getting tourist places for: ${placeName}`);
     const radius = 10000;
     const query = `
       [out:json][timeout:25];
@@ -106,15 +104,14 @@ async function getTouristPlaces(latitude, longitude, placeName) {
       place: placeName,
       attractions: places
     };
-    console.log(`✅ Found ${places.length} attractions`);
+    console.log(`Found ${places.length} places`);
     return result;
   } catch (error) {
-    console.error('❌ Error getting tourist places:', error.message);
+    console.error('Error getting tourist places:', error.message);
     return { error: error.message, attractions: [] };
   }
 }
 
-// Main trip planning endpoint
 app.post('/api/plan-trip', async (req, res) => {
   try {
     const { input } = req.body;
@@ -195,17 +192,64 @@ app.post('/api/plan-trip', async (req, res) => {
     let messages = [
       {
         role: 'user',
-        content: `You are a Tourism AI Agent that helps users plan their trips. Your job is to:
+        content: `You are a Tourism AI Agent whose job is to help users plan short trips by fetching real-time data and presenting it clearly.
 
-1. Understand what information the user wants (weather, places to visit, or both)
-2. Use the available tools to get real-time information
-3. Present the information in a friendly, helpful manner
+Goals
+- Determine whether the user asks for weather, nearby attractions, or both.
+- Use the provided tools (get_coordinates, get_weather, get_tourist_places) to fetch real data when needed.
+- Produce a concise, friendly, human-facing answer when data is available.
 
-Process:
-- First, use get_coordinates to find the location
-- If coordinates are not found, politely inform the user that you don't know if this place exists
-- Based on the user's request, call get_weather and/or get_tourist_places
-- Format the response naturally with proper formatting (use bullets for lists)
+Strict tool usage workflow
+1. ALWAYS call get_coordinates first with { place_name: string } to resolve the place.
+   - If get_coordinates returns found: false, STOP and reply with a short, polite message stating you could not find the place and ask for a clarification or alternate name. Do NOT call other tools.
+2. Only call get_weather and/or get_tourist_places after coordinates are available and only if the user's request implies those data types.
+3. When requesting a tool call, emit exactly one tool_use block for that call (see "Assistant response format" below).
+
+Assistant response format (required)
+- Your message content must be an array of blocks. Each block must be one of:
+  - { type: 'text', text: string } — a human-facing text block.
+  - { type: 'tool_use', id: string, name: string, input: object } — a structured tool request.
+- Examples:
+  - { type: 'tool_use', id: 't1', name: 'get_coordinates', input: { place_name: 'Paris, France' } }
+  - { type: 'text', text: 'Summary: This is the weather for Paris...' }
+- Use numeric latitude/longitude (numbers) when creating tool_use input objects for get_weather and get_tourist_places. Always include place_name in tool inputs for traceability.
+- When you have no more tool_use blocks in your response, the server will treat the reply as final and return the concatenated text blocks to the user.
+
+Final user-facing answer requirements (when no tool_use blocks remain)
+- Start with a single-line summary sentence.
+- Include the resolved place display name and coordinates.
+- Provide weather details as a bullet list: temperature (°C), precipitation probability (%), and units.
+- Provide up to 5 nearby attractions as a bullet list; include each attraction name, type, and one short reason to visit.
+- End with 2 short, actionable next steps (for example: ask for travel dates, preferences, or offer to book transport).
+
+Formatting and safety
+- Do not include raw tool result JSON, API keys, or internal logs in text blocks — present only human-readable text.
+- Keep responses concise and helpful.
+
+Example 1
+Input: I’m going to go to Bangalore, let’s plan my trip.
+Output:
+In Bangalore these are the places you can go,
+- Lalbagh
+- Sri Chamarajendra Park
+- Bangalore palace
+- Bannerghatta National Park
+- Jawaharlal Nehru Planetarium
+Example 2
+Input: I’m going to go to Bangalore, what is the temperature there
+Output:
+- In Bangalore it’s currently 24°C with a chance of 35% to rain.
+Example 3
+Input: I’m going to go to Bangalore, what is the temperature there? And what are the places I
+can visit?
+Output:
+- In Bangalore it’s currently 24°C with a chance of 35% to rain. And these are the places you
+can go:
+- Lalbagh
+- Sri Chamarajendra Park
+- Bangalore palace
+- Bannerghatta National Park
+- Jawaharlal Nehru Planetarium
 
 User request: ${input}`
       }
@@ -237,33 +281,29 @@ User request: ${input}`
       const assistantContent = response.data.content;
       console.log(`📥 Assistant response:`, JSON.stringify(assistantContent, null, 2));
       
-      // Add assistant message to conversation
       messages.push({
         role: 'assistant',
         content: assistantContent
       });
 
-      // Find ALL tool uses in this response
       const toolUses = assistantContent.filter(block => block.type === 'tool_use');
       
       if (toolUses.length === 0) {
-        // No tools to use, return the final response
         const textContent = assistantContent
           .filter(block => block.type === 'text')
           .map(block => block.text)
           .join('\n');
         
-        console.log(`✅ Final response ready`);
+        console.log(`Final response ready`);
         return res.json({ response: textContent });
       }
 
-      console.log(`🔧 Found ${toolUses.length} tool(s) to execute`);
+      console.log(`Found ${toolUses.length} tool(s) to execute`);
 
-      // Execute ALL tools and collect results
       const toolResults = [];
       
       for (const toolUse of toolUses) {
-        console.log(`🔧 Executing tool: ${toolUse.name}`);
+        console.log(`Executing tool: ${toolUse.name}`);
         
         let toolResult;
         try {
@@ -285,11 +325,10 @@ User request: ${input}`
             toolResult = { error: 'Unknown tool' };
           }
         } catch (error) {
-          console.error(`❌ Tool execution error:`, error.message);
+          console.error(`Tool execution error:`, error.message);
           toolResult = { error: error.message };
         }
 
-        // Add this tool result to the collection
         toolResults.push({
           type: 'tool_result',
           tool_use_id: toolUse.id,
@@ -297,24 +336,22 @@ User request: ${input}`
         });
       }
 
-      // Add ALL tool results in a single user message
       messages.push({
         role: 'user',
         content: toolResults
       });
 
-      console.log(`📤 Sent ${toolResults.length} tool result(s) back to Claude`);
+      console.log(`Sent ${toolResults.length} tool result(s) back to Claude`);
 
       iterations++;
     }
 
-    console.log('⚠️  Maximum iterations reached');
+    console.log('Maximum iterations reached');
     return res.status(500).json({ error: 'Maximum iterations reached' });
 
   } catch (error) {
-    console.error('❌ Error:', error.response?.data || error.message);
+    console.error('Error:', error.response?.data || error.message);
     
-    // Log full error details for debugging
     if (error.response?.data) {
       console.error('Full error details:', JSON.stringify(error.response.data, null, 2));
     }
@@ -325,12 +362,10 @@ User request: ${input}`
   }
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Root endpoint
 app.get('/', (req, res) => {
   res.json({
     service: 'Tourism Agent Backend',
@@ -343,8 +378,7 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 Tourism Agent Backend Server`);
-  console.log(`📍 Running on port ${PORT}`);
-  console.log(`🔗 http://localhost:${PORT}`);
-  console.log(`✅ Ready to plan trips!\n`);
+  console.log(`Tourism Agent Backend Server`);
+  console.log(`Running on port ${PORT}`);
+  console.log(`http://localhost:${PORT}`);
 });

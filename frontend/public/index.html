@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tourism Planning Assistant | AI-Powered Travel Planner</title>
+    <title>Tourism Planning Assistant</title>
     <meta name="description" content="Plan your perfect trip with AI. Get weather forecasts and discover top tourist attractions for any city worldwide.">
-    
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
-    
+        
     <style>
         * {
             margin: 0;
@@ -18,7 +15,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, pink 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
             color: #333;
@@ -234,8 +231,18 @@
         }
 
         .example-item::before {
-            content: "💬 ";
-            margin-right: 5px;
+            content: "->";
+            display: inline-block;
+            padding: 4px 8px;
+            background: #eef1ff;
+            color: #2b3aeb;
+            border: 1px solid #2b3aeb; /* dark blue border */
+            border-radius: 8px;
+            font-weight: 700;
+            margin-right: 10px;
+            font-size: 0.9em;
+            line-height: 1;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         }
 
         .footer {
@@ -293,8 +300,7 @@
     <div class="container">
         <div class="card">
             <div class="header">
-                <div class="header-icon">🌍</div>
-                <h1>Tourism Planning Assistant <span class="badge">AI-Powered</span></h1>
+                <h1>Tourism Planning Assistant </h1>
                 <p class="subtitle">Discover weather and attractions for any destination worldwide</p>
             </div>
 
@@ -302,11 +308,11 @@
                 <input 
                     type="text" 
                     id="userInput" 
-                    placeholder="E.g., I'm going to Paris, let's plan my trip..."
+                    placeholder="E.g., I'm going to Bangalore..."
                     autocomplete="off"
                 />
                 <button id="submitBtn" onclick="planTrip()">
-                    🚀 Plan Trip
+                    Plan My Trip
                 </button>
             </div>
 
@@ -326,17 +332,17 @@
 
             <div id="result" class="result hidden">
                 <div class="result-header">
-                    <span class="result-icon">✈️</span>
+                    <span class="result-icon"></span>
                     <h2 class="result-title">Your Trip Plan</h2>
                 </div>
                 <div class="result-content" id="resultContent"></div>
             </div>
 
             <div class="examples">
-                <h2>💡 Try These Examples</h2>
+                <h2>Try These Examples</h2>
                 <div class="example-grid">
                     <div class="example-item" onclick="fillExample(this)">
-                        I'm going to Bangalore, let's plan my trip
+                        I'm going to Bangalore, what is the temperature there?
                     </div>
                     <div class="example-item" onclick="fillExample(this)">
                         What's the weather in Tokyo?
@@ -347,28 +353,13 @@
                     <div class="example-item" onclick="fillExample(this)">
                         London weather and places to visit
                     </div>
-                    <div class="example-item" onclick="fillExample(this)">
-                        I want to explore New York City
-                    </div>
-                    <div class="example-item" onclick="fillExample(this)">
-                        Planning a trip to Barcelona
-                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="footer">
-            <p>Powered by Claude AI • Built with ❤️ for travelers</p>
-            <p style="margin-top: 10px; font-size: 0.9em;">
-                Using Open-Meteo, OpenStreetMap & Nominatim APIs
-            </p>
         </div>
     </div>
 
     <script>
-        // IMPORTANT: Change this to your deployed backend URL on Render
         const BACKEND_URL = 'https://multi-agent-tourism-system-1-u1nl.onrender.com';
-        // Example: const BACKEND_URL = 'https://tourism-agent-backend-xxxx.onrender.com';
 
         const userInput = document.getElementById('userInput');
         const submitBtn = document.getElementById('submitBtn');
@@ -400,7 +391,7 @@
             // Show loading
             loading.classList.remove('hidden');
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ Planning...';
+            submitBtn.textContent = 'Planning...';
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/plan-trip`, {
@@ -427,10 +418,9 @@
             } catch (err) {
                 showError(err.message || 'An unexpected error occurred. Please try again.');
             } finally {
-                // Hide loading
                 loading.classList.add('hidden');
                 submitBtn.disabled = false;
-                submitBtn.textContent = '🚀 Plan Trip';
+                submitBtn.textContent = 'Plan Trip';
             }
         }
 
@@ -444,21 +434,18 @@
             userInput.value = element.textContent.trim();
             userInput.focus();
             
-            // Optional: Auto-submit
-            // planTrip();
         }
 
-        // Check backend connection on load
         window.addEventListener('load', async () => {
             try {
                 const response = await fetch(`${BACKEND_URL}/health`);
                 if (response.ok) {
-                    console.log('✅ Backend connection successful');
+                    console.log('Backend connection successful');
                 } else {
-                    console.warn('⚠️ Backend health check failed');
+                    console.warn('Backend health check failed');
                 }
             } catch (err) {
-                console.error('❌ Cannot connect to backend:', err.message);
+                console.error('Cannot connect to backend:', err.message);
                 showError('Cannot connect to backend server. Please check if the backend is running.');
             }
         });
