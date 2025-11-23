@@ -120,7 +120,7 @@ app.post('/api/plan-trip', async (req, res) => {
       return res.status(400).json({ error: 'Input is required' });
     }
 
-    console.log(`\n🎯 New request: ${input}`);
+  console.log(`\nNew request: ${input}`);
 
     const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
     
