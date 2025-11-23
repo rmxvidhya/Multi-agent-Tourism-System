@@ -224,6 +224,8 @@ Final user-facing answer requirements (when no tool_use blocks remain)
 
 Formatting and safety
 - Do not include raw tool result JSON, API keys, or internal logs in text blocks — present only human-readable text.
+- Do not ask for next steps return just the answer.
+- Do not return any bolded/italic or formatted text.
 - Keep responses concise and helpful.
 
 Example 1
