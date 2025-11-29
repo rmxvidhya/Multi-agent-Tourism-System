@@ -68,11 +68,11 @@ async function getWeather(latitude, longitude, placeName) {
   }
 }
 
-async function getBudget(latitude, longitude, placeName) {
+async function getBudget(placeName) {
   try {
     console.log(`Getting flight data for: ${placeName}`);
 
-    const url = `https://serpapi.com/search.json?engine=google_flights&departure_id=BLR&arrival_id=${placename}&gl=us&hl=en&currency=USD&outbound_date=2025-11-30&return_date=2025-12-06&gRecaptchaResponse=0cAFcWeA4PsMSd8hqAX9M4zBsW9QSpWF-O_JOOniT9GWd6ShVakXoh6HkYuRKMaTBcULvv-vZduDt-Jl4kKiBKgMzcfSWApR-U9OWTSRieFzCU8iKlmBSL8nwq3whWvESlCrOBRD02OAx7S1R7kUPv1A9Hw-9JKhBw4De55kA1D2Q-qAxeHjcnZmJwSBv7Wcp3IAxNpqNXuTpQSsAgs-B-3cnykAytN3zKpZb54cCWYQl1ZO002OaK3ZhfPpxLSI6YODcreWIAXHtBDhal4bkF91XFI2Z11fIZopsmiU2cIw1qT3-kfodcYHP0667-p4yh3mjNZAjcvfc9uzX4pGkpxofUqk8EUSi_PiVMPmQboMSZjSY5y3R4KPeJkxiTDOu8c1cOVMBT1hXJcHovGMGeXWuYEQ1i9qwHARkjUjSMvu8WAYBOtz4zcwK2DxzH7ATIo9OW8YGNIhDHRFmWGgvWzZsWRxqWCNCfZODl-xts6gv79TO-3A6-dhBoEJWI97AfOqK6Umj9zTl7or488RglKj48eJ1h7CgZP-R00da_4bgydThPLT51Xwj9dItpmdz_nzqgoQ7FRCnVgAP6kSmSc1nm7jlTx1AH0JPxOZNQfxH0zjN4QvHyMIajm67faFLOPyGg-vw4fih_DoP5wzKYcUrwF7QCJuYww74629yMDpBiGod7jEe2NbPX5gDIEnesDN0rjjHtvrODymp26h5lPASeRwYHQw2-6JX6W4qlkdEJAWJOYiD_6i-yWe4qq2A7B-OsLlxHUL0-5Z5FcMA-F_BIt1H8uH6Jm9eDhE8g4TP3QFGQEmUqmuh4SYp3fxRPfgagnA5OtbZi`
+    const url = `https://serpapi.com/search`
     const response = await axios.get(url, {
       params: {
         engine: "google_flights",
@@ -83,11 +83,12 @@ async function getBudget(latitude, longitude, placeName) {
         currency: "USD",
         outbound_date: "2025-11-30",
         return_date: "2025-12-06",
-        api_key: "secret_api_key"
+        api_key: "28cc24f980f5ddabed1a0b52a778544d9e6abee5f85cc12b3b87624e7d022a2a"
       },
     });
  
-    
+    const bestFlight= response.data.best_flights;
+    const price= bestFlight[0].price;
     const result = {
       place: placeName,
       price: price
@@ -383,10 +384,10 @@ User request: ${input}`
             );
           } else if (toolUse.name === 'get_budget') {
             toolResult = await getBudget(
-              toolUse.input.latitude,
-              toolUse.input.longitude,
+
               toolUse.input.place_name
             );
+            console.log(`Executing tool: getbudget`);
           } else {
             toolResult = { error: 'Unknown tool' };
           }
