@@ -67,30 +67,30 @@ async function getWeather(latitude, longitude, placeName) {
     return { error: error.message };
   }
 }
+
 async function getBudget(latitude, longitude, placeName) {
   try {
     console.log(`Getting flight data for: ${placeName}`);
-    const url= `https://serpapi.com/search.json?engine=google_flights&departure_id=BLR&arrival_id=${placename}&gl=us&hl=en&currency=USD&outbound_date=2025-11-30&return_date=2025-12-06&gRecaptchaResponse=0cAFcWeA4PsMSd8hqAX9M4zBsW9QSpWF-O_JOOniT9GWd6ShVakXoh6HkYuRKMaTBcULvv-vZduDt-Jl4kKiBKgMzcfSWApR-U9OWTSRieFzCU8iKlmBSL8nwq3whWvESlCrOBRD02OAx7S1R7kUPv1A9Hw-9JKhBw4De55kA1D2Q-qAxeHjcnZmJwSBv7Wcp3IAxNpqNXuTpQSsAgs-B-3cnykAytN3zKpZb54cCWYQl1ZO002OaK3ZhfPpxLSI6YODcreWIAXHtBDhal4bkF91XFI2Z11fIZopsmiU2cIw1qT3-kfodcYHP0667-p4yh3mjNZAjcvfc9uzX4pGkpxofUqk8EUSi_PiVMPmQboMSZjSY5y3R4KPeJkxiTDOu8c1cOVMBT1hXJcHovGMGeXWuYEQ1i9qwHARkjUjSMvu8WAYBOtz4zcwK2DxzH7ATIo9OW8YGNIhDHRFmWGgvWzZsWRxqWCNCfZODl-xts6gv79TO-3A6-dhBoEJWI97AfOqK6Umj9zTl7or488RglKj48eJ1h7CgZP-R00da_4bgydThPLT51Xwj9dItpmdz_nzqgoQ7FRCnVgAP6kSmSc1nm7jlTx1AH0JPxOZNQfxH0zjN4QvHyMIajm67faFLOPyGg-vw4fih_DoP5wzKYcUrwF7QCJuYww74629yMDpBiGod7jEe2NbPX5gDIEnesDN0rjjHtvrODymp26h5lPASeRwYHQw2-6JX6W4qlkdEJAWJOYiD_6i-yWe4qq2A7B-OsLlxHUL0-5Z5FcMA-F_BIt1H8uH6Jm9eDhE8g4TP3QFGQEmUqmuh4SYp3fxRPfgagnA5OtbZi`
-    const response =await axios.get(url , {
-    params:{
-      engine: "google_flights",
-      departure_id: "BLR",
-      arrival_id: `${placeName}`,
-      hl: "en",
-      gl: "us",
-      currency: "USD",
-      outbound_date: "2025-11-30",
-      return_date: "2025-12-06",
-      api_key: "secret_api_key"
-    },
-      });
 
+    const url = `https://serpapi.com/search.json?engine=google_flights&departure_id=BLR&arrival_id=${placename}&gl=us&hl=en&currency=USD&outbound_date=2025-11-30&return_date=2025-12-06&gRecaptchaResponse=0cAFcWeA4PsMSd8hqAX9M4zBsW9QSpWF-O_JOOniT9GWd6ShVakXoh6HkYuRKMaTBcULvv-vZduDt-Jl4kKiBKgMzcfSWApR-U9OWTSRieFzCU8iKlmBSL8nwq3whWvESlCrOBRD02OAx7S1R7kUPv1A9Hw-9JKhBw4De55kA1D2Q-qAxeHjcnZmJwSBv7Wcp3IAxNpqNXuTpQSsAgs-B-3cnykAytN3zKpZb54cCWYQl1ZO002OaK3ZhfPpxLSI6YODcreWIAXHtBDhal4bkF91XFI2Z11fIZopsmiU2cIw1qT3-kfodcYHP0667-p4yh3mjNZAjcvfc9uzX4pGkpxofUqk8EUSi_PiVMPmQboMSZjSY5y3R4KPeJkxiTDOu8c1cOVMBT1hXJcHovGMGeXWuYEQ1i9qwHARkjUjSMvu8WAYBOtz4zcwK2DxzH7ATIo9OW8YGNIhDHRFmWGgvWzZsWRxqWCNCfZODl-xts6gv79TO-3A6-dhBoEJWI97AfOqK6Umj9zTl7or488RglKj48eJ1h7CgZP-R00da_4bgydThPLT51Xwj9dItpmdz_nzqgoQ7FRCnVgAP6kSmSc1nm7jlTx1AH0JPxOZNQfxH0zjN4QvHyMIajm67faFLOPyGg-vw4fih_DoP5wzKYcUrwF7QCJuYww74629yMDpBiGod7jEe2NbPX5gDIEnesDN0rjjHtvrODymp26h5lPASeRwYHQw2-6JX6W4qlkdEJAWJOYiD_6i-yWe4qq2A7B-OsLlxHUL0-5Z5FcMA-F_BIt1H8uH6Jm9eDhE8g4TP3QFGQEmUqmuh4SYp3fxRPfgagnA5OtbZi`
+    const response = await axios.get(url, {
+      params: {
+        engine: "google_flights",
+        departure_id: "BLR",
+        arrival_id: placeName,
+        hl: "en",
+        gl: "us",
+        currency: "USD",
+        outbound_date: "2025-11-30",
+        return_date: "2025-12-06",
+        api_key: "secret_api_key"
+      },
+    });
+ 
+    
     const result = {
       place: placeName,
-      departure_airport: response.data.departure_id,
-      arrival_airport: response.data.arrival_id,
-      price: response.data.price
-
+      price: price
     };
     console.log(`Flight data:`, result);
     return result;
@@ -217,7 +217,7 @@ app.post('/api/plan-trip', async (req, res) => {
           },
           required: ['latitude', 'longitude', 'place_name']
         }
-      }
+      },
       {
         name: 'get_budget',
         description: 'Get the next flight prices using API',
@@ -253,7 +253,7 @@ Goals
 - If both pickup and drop locations are missing then do no assume data and calculate, politely informthe user that enough data is not avalable and mention both arrival and departure flight location details in the prompt and try again.
 - Use the provided tools (get_coordinates, get_weather, get_tourist_places, get_budget) to fetch real data when needed.
 - Produce a concise, friendly, human-facing answer when data is available.
-- Provide an approximate budget for the trip assuming the user would be staying for about 5 days and the cost for the trip should include the plane tickets, the average food expense on the cuisine present in the location, as well as the accomodation charges.
+- Provide an approximate budget for the trip assuming the user would be staying for about 5 days and the cost for the trip should include the plane tickets, the average food expense on the cuisine present in the location, as well as the accomodation charges.(if any issues in the flight prices, mention the price of the next available flight for the place from bangalore)
 
 Strict tool usage workflow
 1. ALWAYS call get_coordinates first with { place_name: string } to resolve the place.
