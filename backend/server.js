@@ -22,12 +22,12 @@ async function getCoordinates(placeName) {
         'User-Agent': 'TourismAgent/1.0'
       }
     });
-    
+
     if (response.data.length === 0) {
       console.log(`Place not found: ${placeName}`);
       return { found: false, message: "Place not found" };
     }
-    
+
     const result = {
       found: true,
       latitude: parseFloat(response.data[0].lat),
@@ -53,7 +53,7 @@ async function getWeather(latitude, longitude, placeName) {
         timezone: 'auto'
       }
     });
-    
+
     const result = {
       place: placeName,
       temperature: response.data.current.temperature_2m,
@@ -70,27 +70,27 @@ async function getWeather(latitude, longitude, placeName) {
 async function getBudget(latitude, longitude, placeName) {
   try {
     console.log(`Getting flight data for: ${placeName}`);
-    const { getJson } = require("serpapi");
-      getJson({
-        engine: "google_flights",
-        departure_id: "BLR",
-        arrival_id: `${placeName}`,
-        hl: "en",
-        gl: "us",
-        currency: "USD",
-        outbound_date: "2025-11-30",
-        return_date: "2025-12-06",
-        api_key: "secret_api_key"
-      }, (json) => {
-        console.log(json);
+    const url= `https://serpapi.com/search.json?engine=google_flights&departure_id=BLR&arrival_id=${placename}&gl=us&hl=en&currency=USD&outbound_date=2025-11-30&return_date=2025-12-06&gRecaptchaResponse=0cAFcWeA4PsMSd8hqAX9M4zBsW9QSpWF-O_JOOniT9GWd6ShVakXoh6HkYuRKMaTBcULvv-vZduDt-Jl4kKiBKgMzcfSWApR-U9OWTSRieFzCU8iKlmBSL8nwq3whWvESlCrOBRD02OAx7S1R7kUPv1A9Hw-9JKhBw4De55kA1D2Q-qAxeHjcnZmJwSBv7Wcp3IAxNpqNXuTpQSsAgs-B-3cnykAytN3zKpZb54cCWYQl1ZO002OaK3ZhfPpxLSI6YODcreWIAXHtBDhal4bkF91XFI2Z11fIZopsmiU2cIw1qT3-kfodcYHP0667-p4yh3mjNZAjcvfc9uzX4pGkpxofUqk8EUSi_PiVMPmQboMSZjSY5y3R4KPeJkxiTDOu8c1cOVMBT1hXJcHovGMGeXWuYEQ1i9qwHARkjUjSMvu8WAYBOtz4zcwK2DxzH7ATIo9OW8YGNIhDHRFmWGgvWzZsWRxqWCNCfZODl-xts6gv79TO-3A6-dhBoEJWI97AfOqK6Umj9zTl7or488RglKj48eJ1h7CgZP-R00da_4bgydThPLT51Xwj9dItpmdz_nzqgoQ7FRCnVgAP6kSmSc1nm7jlTx1AH0JPxOZNQfxH0zjN4QvHyMIajm67faFLOPyGg-vw4fih_DoP5wzKYcUrwF7QCJuYww74629yMDpBiGod7jEe2NbPX5gDIEnesDN0rjjHtvrODymp26h5lPASeRwYHQw2-6JX6W4qlkdEJAWJOYiD_6i-yWe4qq2A7B-OsLlxHUL0-5Z5FcMA-F_BIt1H8uH6Jm9eDhE8g4TP3QFGQEmUqmuh4SYp3fxRPfgagnA5OtbZi`
+    const response =await axios.get(url , {
+    params:{
+      engine: "google_flights",
+      departure_id: "BLR",
+      arrival_id: `${placeName}`,
+      hl: "en",
+      gl: "us",
+      currency: "USD",
+      outbound_date: "2025-11-30",
+      return_date: "2025-12-06",
+      api_key: "secret_api_key"
+    },
       });
-    
+
     const result = {
       place: placeName,
-      departure_airport:response.data.departure_id,
-      arrival_airport:response.data.arrival_id,
-      price:response.data.price
-    
+      departure_airport: response.data.departure_id,
+      arrival_airport: response.data.arrival_id,
+      price: response.data.price
+
     };
     console.log(`Flight data:`, result);
     return result;
@@ -115,14 +115,14 @@ async function getTouristPlaces(latitude, longitude, placeName) {
       );
       out center 20;
     `;
-    
+
     const response = await axios.post('https://overpass-api.de/api/interpreter', query, {
       headers: {
         'Content-Type': 'text/plain'
       },
       timeout: 30000
     });
-    
+
     const places = response.data.elements
       .filter(el => el.tags && el.tags.name)
       .map(el => ({
@@ -130,7 +130,7 @@ async function getTouristPlaces(latitude, longitude, placeName) {
         type: el.tags.tourism || el.tags.historic || el.tags.leisure
       }))
       .slice(0, 5);
-    
+
     const result = {
       place: placeName,
       attractions: places
@@ -146,15 +146,15 @@ async function getTouristPlaces(latitude, longitude, placeName) {
 app.post('/api/plan-trip', async (req, res) => {
   try {
     const { input } = req.body;
-    
+
     if (!input) {
       return res.status(400).json({ error: 'Input is required' });
     }
 
-  console.log(`\nNew request: ${input}`);
+    console.log(`\nNew request: ${input}`);
 
     const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-    
+
     if (!ANTHROPIC_API_KEY) {
       return res.status(500).json({ error: 'API key not configured' });
     }
@@ -320,7 +320,7 @@ User request: ${input}`
 
     while (iterations < maxIterations) {
       console.log(`\nIteration ${iterations + 1}`);
-      
+
       const response = await axios.post(
         'https://api.anthropic.com/v1/messages',
         {
@@ -340,20 +340,20 @@ User request: ${input}`
 
       const assistantContent = response.data.content;
       console.log(`Assistant response:`, JSON.stringify(assistantContent, null, 2));
-      
+
       messages.push({
         role: 'assistant',
         content: assistantContent
       });
 
       const toolUses = assistantContent.filter(block => block.type === 'tool_use');
-      
+
       if (toolUses.length === 0) {
         const textContent = assistantContent
           .filter(block => block.type === 'text')
           .map(block => block.text)
           .join('\n');
-        
+
         console.log(`Final response ready`);
         return res.json({ response: textContent });
       }
@@ -361,10 +361,10 @@ User request: ${input}`
       console.log(`Found ${toolUses.length} tool(s) to execute`);
 
       const toolResults = [];
-      
+
       for (const toolUse of toolUses) {
         console.log(`Executing tool: ${toolUse.name}`);
-        
+
         let toolResult;
         try {
           if (toolUse.name === 'get_coordinates') {
@@ -381,7 +381,7 @@ User request: ${input}`
               toolUse.input.longitude,
               toolUse.input.place_name
             );
-          }else if (toolUse.name === 'get_budget') {
+          } else if (toolUse.name === 'get_budget') {
             toolResult = await getBudget(
               toolUse.input.latitude,
               toolUse.input.longitude,
@@ -417,13 +417,13 @@ User request: ${input}`
 
   } catch (error) {
     console.error('Error:', error.response?.data || error.message);
-    
+
     if (error.response?.data) {
       console.error('Full error details:', JSON.stringify(error.response.data, null, 2));
     }
-    
-    res.status(500).json({ 
-      error: error.response?.data?.error?.message || error.message 
+
+    res.status(500).json({
+      error: error.response?.data?.error?.message || error.message
     });
   }
 });
