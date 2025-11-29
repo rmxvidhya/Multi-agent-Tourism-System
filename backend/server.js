@@ -67,7 +67,38 @@ async function getWeather(latitude, longitude, placeName) {
     return { error: error.message };
   }
 }
-
+async function getBudget(latitude, longitude, placeName) {
+  try {
+    console.log(`Getting flight data for: ${placeName}`);
+    const { getJson } = require("serpapi");
+      getJson({
+        engine: "google_flights",
+        departure_id: "BLR",
+        arrival_id: `${placeName}`,
+        hl: "en",
+        gl: "us",
+        currency: "USD",
+        outbound_date: "2025-11-30",
+        return_date: "2025-12-06",
+        api_key: "secret_api_key"
+      }, (json) => {
+        console.log(json);
+      });
+    
+    const result = {
+      place: placeName,
+      departure_airport:response.data.departure_id,
+      arrival_airport:response.data.arrival_id,
+      price:response.data.price
+    
+    };
+    console.log(`Flight data:`, result);
+    return result;
+  } catch (error) {
+    console.error('Error getting flight data:', error.message);
+    return { error: error.message };
+  }
+}
 async function getTouristPlaces(latitude, longitude, placeName) {
   try {
     console.log(`Getting tourist places for: ${placeName}`);
@@ -187,6 +218,28 @@ app.post('/api/plan-trip', async (req, res) => {
           required: ['latitude', 'longitude', 'place_name']
         }
       }
+      {
+        name: 'get_budget',
+        description: 'Get the next flight prices using API',
+        input_schema: {
+          type: 'object',
+          properties: {
+            latitude: {
+              type: 'number',
+              description: 'Latitude coordinate'
+            },
+            longitude: {
+              type: 'number',
+              description: 'Longitude coordinate'
+            },
+            place_name: {
+              type: 'string',
+              description: 'Name of the place for reference'
+            }
+          },
+          required: ['latitude', 'longitude', 'place_name']
+        }
+      }
     ];
 
     let messages = [
@@ -195,14 +248,17 @@ app.post('/api/plan-trip', async (req, res) => {
         content: `You are a Tourism AI Agent whose job is to help users plan short trips by fetching real-time data and presenting it clearly.
 
 Goals
-- Determine whether the user asks for weather, nearby attractions, or both.
-- Use the provided tools (get_coordinates, get_weather, get_tourist_places) to fetch real data when needed.
+- Determine whether the user asks for weather, nearby attractions,budget or both.
+-If the user requires the budgeting, assume pickup location to be Bangalore, Karnataka, India and drop location as the user specified location.
+- If both pickup and drop locations are missing then do no assume data and calculate, politely informthe user that enough data is not avalable and mention both arrival and departure flight location details in the prompt and try again.
+- Use the provided tools (get_coordinates, get_weather, get_tourist_places, get_budget) to fetch real data when needed.
 - Produce a concise, friendly, human-facing answer when data is available.
+- Provide an approximate budget for the trip assuming the user would be staying for about 5 days and the cost for the trip should include the plane tickets, the average food expense on the cuisine present in the location, as well as the accomodation charges.
 
 Strict tool usage workflow
 1. ALWAYS call get_coordinates first with { place_name: string } to resolve the place.
    - If get_coordinates returns found: false, STOP and reply with a short, polite message stating you could not find the place and ask for a clarification or alternate name. Do NOT call other tools.
-2. Only call get_weather and/or get_tourist_places after coordinates are available and only if the user's request implies those data types.
+2. Only call get_weather and/or get_tourist_places and/or get_budget after coordinates are available and only if the user's request implies those data types.
 3. When requesting a tool call, emit exactly one tool_use block for that call (see "Assistant response format" below).
 
 Assistant response format (required)
@@ -220,6 +276,7 @@ Final user-facing answer requirements (when no tool_use blocks remain)
 - Include the resolved place display name and coordinates.
 - Provide weather details as a bullet list: temperature (°C), precipitation probability (%), and units.
 - Provide up to 5 nearby attractions as a bullet list; include each attraction name, type, and one short reason to visit.
+- Also provide user budget range in one line keeping in the mind the location constraints as well as the the flight prices
 
 Formatting and safety
 - Do not include raw tool result JSON, API keys, or internal logs in text blocks — present only human-readable text.
@@ -251,6 +308,8 @@ can go:
 - Bangalore palace
 - Bannerghatta National Park
 - Jawaharlal Nehru Planetarium
+
+
 
 User request: ${input}`
       }
@@ -318,6 +377,12 @@ User request: ${input}`
             );
           } else if (toolUse.name === 'get_tourist_places') {
             toolResult = await getTouristPlaces(
+              toolUse.input.latitude,
+              toolUse.input.longitude,
+              toolUse.input.place_name
+            );
+          }else if (toolUse.name === 'get_budget') {
+            toolResult = await getBudget(
               toolUse.input.latitude,
               toolUse.input.longitude,
               toolUse.input.place_name
